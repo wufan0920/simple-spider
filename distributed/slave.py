@@ -3,22 +3,23 @@
 
 import urllib
 import urllib2
-import threading,time
+import time
+from xmlrpclib import ServerProxy
 
 
-def parse_page():
+def parse_page(server):
     wait=0
     while True:
-        if len(url_pool)==0:
+        print 'hahaha'
+        url=server.get_url()
+        if url==0:
             time.sleep(1)
             wait=wait+1
-            if wait>1:
+            if wait>3:
+                server.stop_parse()
                 break
         else:
             wait=0
-            pool_lock.acquire()
-            url=url_pool.pop()
-            pool_lock.release()
 
             print url
 
@@ -34,13 +35,7 @@ def parse_page():
                     if url.find('http')<0 and url.find('https')<0:
                         url =  'http://staff.ustc.edu.cn/~bjhua/courses/security/2013/'+url
                     #url_pool.add(url)
-                    pool_lock.acquire()
-                    set_lock.acquire()
-                    if not(url in url_set) and url.find('html')!=-1 and url.find('ustc')!=-1:
-                        url_pool.append(url)
-                        url_set.add(url)
-                    set_lock.release()
-                    pool_lock.release()
+                    server.add_url(url)
                     result = result[result.find('href')+1:]
             except urllib2.URLError,e:
                 if hasattr(e, 'reason'):
@@ -52,28 +47,6 @@ def parse_page():
     #    else:
 
 if __name__=='__main__':
-    initial_url = 'http://staff.ustc.edu.cn/~bjhua/courses/security/2013/index.html'
-
-    url_set = set()
-    url_pool = [] 
-
-    url_set.add(initial_url)
-    url_pool.append(initial_url)
-
-    pool_lock=threading.Lock()
-    set_lock=threading.Lock()
-    #parse_page()
-
-    thread_list=[]
-    for i in range(4):
-        t=threading.Thread(target=parse_page)
-        t.start()
-        thread_list.append(t)
-    for t in thread_list:
-        t.join()
-    print url_set
-
-
-
-
-    
+    #server=ServerProxy("http://localhost:8000")
+    server=ServerProxy("http://192.168.1.100:8000")
+    parse_page(server)
